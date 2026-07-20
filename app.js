@@ -3,7 +3,7 @@
    ========================================================================== */
 
 // --- CONFIGURATION & DATABASE STATE ---
-let dbMode = localStorage.getItem('aura_pos_db_mode') || 'offline'; // 'offline' or 'supabase'
+let dbMode = localStorage.getItem('offline') || 'offline'; // 'offline' or 'supabase'
 let supabaseUrl = localStorage.getItem('aura_pos_supabase_url') || '';
 let supabaseKey = localStorage.getItem('aura_pos_supabase_key') || '';
 let supabase = null;
