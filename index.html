@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aura Cafe - Premium Coffee & Bakery POS</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Chart.js for beautiful analytics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Supabase JS Client via CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- Style Sheet -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- ==================== NOTIFICATION TOAST ==================== -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- ==================== LOGIN SCREEN ==================== -->
+    <div id="login-screen" class="login-screen active">
+        <div class="login-glass-card">
+            <div class="login-header">
+                <div class="logo-wrapper">
+                    <i data-lucide="coffee" class="logo-icon animate-pulse"></i>
+                </div>
+                <h1>AURA CAFE</h1>
+                <p>ระบบจัดการร้านกาแฟและเบเกอรี่หน้าร้าน</p>
+            </div>
+            
+            <form id="login-form" class="login-form">
+                <div class="input-group">
+                    <label for="login-username"><i data-lucide="user"></i> ชื่อผู้ใช้</label>
+                    <input type="text" id="login-username" placeholder="กรอกชื่อผู้ใช้พนักงาน" required>
+                </div>
+                <div class="input-group">
+                    <label for="login-password"><i data-lucide="lock"></i> รหัสผ่าน</label>
+                    <input type="password" id="login-password" placeholder="กรอกรหัสผ่าน" required>
+                </div>
+                
+                <button type="submit" class="btn btn-primary btn-block" id="login-btn">
+                    <span>เข้าสู่ระบบ</span>
+                    <i data-lucide="arrow-right"></i>
+                </button>
+            </form>
+            
+            <div class="login-footer">
+                <span class="badge badge-offline" id="connection-status-badge">
+                    <span class="status-dot"></span>
+                    <span class="status-text">โหมดจำลอง (Offline)</span>
+                </span>
+                <button class="btn btn-text-icon" id="quick-config-btn">
+                    <i data-lucide="settings"></i> ตั้งค่าฐานข้อมูล
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== MAIN APPLICATION CONTAINER ==================== -->
+    <div id="app-container" class="app-container">
+        
+        <!-- SIDEBAR NAVIGATION -->
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <i data-lucide="coffee" class="brand-icon"></i>
+                <span>AURA CAFE</span>
+            </div>
+            
+            <div class="sidebar-user">
+                <div class="avatar">
+                    <span id="user-avatar-initial">A</span>
+                </div>
+                <div class="user-info">
+                    <h3 id="sidebar-user-name">Employee Name</h3>
+                    <p id="sidebar-user-role">Cashier</p>
+                </div>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-item active" data-target="pos-view">
+                    <i data-lucide="shopping-cart"></i>
+                    <span>ระบบขาย POS</span>
+                </a>
+                <a href="#" class="nav-item" data-target="loyalty-view">
+                    <i data-lucide="users"></i>
+                    <span>สะสมแต้มสมาชิก</span>
+                </a>
+                <a href="#" class="nav-item" data-target="dashboard-view">
+                    <i data-lucide="bar-chart-3"></i>
+                    <span>แดชบอร์ดสถิติ</span>
+                </a>
+                <a href="#" class="nav-item" data-target="settings-view">
+                    <i data-lucide="settings"></i>
+                    <span>การตั้งค่าเชื่อมต่อ</span>
+                </a>
+                <a href="#" class="nav-item" id="theme-toggle-btn">
+                    <i data-lucide="sun" id="theme-toggle-icon"></i>
+                    <span id="theme-toggle-text">โหมดสว่าง (Light Mode)</span>
+                </a>
+            </nav>
+            
+            <div class="sidebar-footer">
+                <button class="btn btn-danger btn-block" id="logout-btn">
+                    <i data-lucide="log-out"></i>
+                    <span>ออกจากระบบ</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- MAIN MAIN CONTENT VIEW -->
+        <main class="main-content">
+            
+            <!-- POS VIEW -->
+            <section id="pos-view" class="view-section active">
+                <div class="pos-layout">
+                    <!-- Left: Product Section -->
+                    <div class="product-section">
+                        <div class="section-header">
+                            <div class="search-bar-wrapper">
+                                <i data-lucide="search" class="search-icon"></i>
+                                <input type="text" id="product-search" placeholder="ค้นหาเมนู, เบเกอรี่...">
+                            </div>
+                            
+                            <div class="category-tabs">
+                                <button class="tab-btn active" data-category="all">ทั้งหมด</button>
+                                <button class="tab-btn" data-category="coffee">เครื่องดื่ม</button>
+                                <button class="tab-btn" data-category="bakery">เบเกอรี่</button>
+                            </div>
+                        </div>
+                        
+                        <div class="products-grid" id="products-grid">
+                            <!-- Product Cards will be rendered dynamically here -->
+                        </div>
+                    </div>
+                    
+                    <!-- Right: Checkout Sidebar -->
+                    <div class="checkout-sidebar">
+                        <div class="checkout-header">
+                            <h2>รายการสั่งซื้อ</h2>
+                            <button class="btn btn-icon-only text-danger" id="clear-cart-btn" title="ล้างตะกร้า">
+                                <i data-lucide="trash-2"></i>
+                            </button>
+                        </div>
+                        
+                        <!-- Cart Items -->
+                        <div class="cart-items-container" id="cart-items-container">
+                            <!-- Cart Items rendered dynamically -->
+                            <div class="empty-cart-state">
+                                <i data-lucide="shopping-bag" class="empty-icon"></i>
+                                <p>ไม่มีสินค้าในตะกร้า</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Loyalty/Customer Search in checkout -->
+                        <div class="cart-loyalty-panel">
+                            <div class="loyalty-header">
+                                <h3><i data-lucide="award"></i> ลูกค้าสมาชิก</h3>
+                                <button class="btn btn-sm btn-outline-primary" id="btn-add-customer-pos">
+                                    <i data-lucide="plus"></i> สมัครสมาชิก
+                                </button>
+                            </div>
+                            
+                            <div class="customer-search-input-group">
+                                <input type="text" id="phone-search-input" placeholder="ค้นหาด้วยเบอร์โทรศัพท์...">
+                                <button class="btn btn-primary btn-sm" id="btn-search-customer"><i data-lucide="search"></i></button>
+                            </div>
+                            
+                            <!-- Customer Details Panel if active -->
+                            <div class="selected-customer-card" id="selected-customer-card" style="display: none;">
+                                <div class="customer-header">
+                                    <span class="customer-name" id="selected-customer-name">สมชาย ดีใจ</span>
+                                    <button class="btn-remove-customer" id="btn-deselect-customer"><i data-lucide="x"></i></button>
+                                </div>
+                                <div class="customer-details">
+                                    <p>เบอร์โทร: <span id="selected-customer-phone">0812345678</span></p>
+                                    <p>คะแนนสะสม: <strong class="text-primary"><span id="selected-customer-points">25</span> แต้ม</strong></p>
+                                </div>
+                                <div class="redeem-actions" id="redeem-actions-container">
+                                    <!-- Dynamic points redemption buttons will appear here -->
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Summary -->
+                        <div class="cart-summary">
+                            <div class="summary-row">
+                                <span>ยอดรวมทั้งหมด</span>
+                                <span id="cart-subtotal">฿0.00</span>
+                            </div>
+                            <div class="summary-row text-danger" id="discount-row" style="display: none;">
+                                <span>ส่วนลด</span>
+                                <span id="cart-discount">-฿0.00</span>
+                            </div>
+                            <div class="summary-row font-large font-bold">
+                                <span>ยอดสุทธิ</span>
+                                <span class="text-accent" id="cart-total">฿0.00</span>
+                            </div>
+                            <div class="summary-row text-success font-sm" id="points-earn-row">
+                                <span>ได้รับแต้มสะสม (+1 แต้ม / ฿50)</span>
+                                <span id="cart-points-earned">0 แต้ม</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Actions -->
+                        <button class="btn btn-accent btn-block btn-lg" id="pay-btn" disabled>
+                            <i data-lucide="credit-card"></i>
+                            <span>ชำระเงิน</span>
+                        </button>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- LOYALTY VIEW -->
+            <section id="loyalty-view" class="view-section">
+                <div class="panel-card">
+                    <div class="panel-header">
+                        <div>
+                            <h2>จัดการสมาชิกสะสมแต้ม</h2>
+                            <p>ค้นหา เพิ่ม หรือแก้ไขข้อมูลลูกค้าในระบบสะสมแต้ม</p>
+                        </div>
+                        <button class="btn btn-primary" id="btn-new-customer-view">
+                            <i data-lucide="plus"></i> สมัครสมาชิกใหม่
+                        </button>
+                    </div>
+                    
+                    <div class="panel-filter-row">
+                        <div class="search-bar-wrapper max-width-md">
+                            <i data-lucide="search" class="search-icon"></i>
+                            <input type="text" id="loyalty-search" placeholder="ค้นหาจากชื่อ หรือ เบอร์โทรศัพท์...">
+                        </div>
+                    </div>
+                    
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>ชื่อลูกค้า</th>
+                                    <th>เบอร์โทรศัพท์</th>
+                                    <th>คะแนนสะสม</th>
+                                    <th>วันที่ลงทะเบียน</th>
+                                    <th class="text-center">เครื่องมือ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="loyalty-table-body">
+                                <!-- Members list will be loaded here dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- DASHBOARD VIEW -->
+            <section id="dashboard-view" class="view-section">
+                <div class="dashboard-grid">
+                    <!-- KPI Card 1 -->
+                    <div class="kpi-card">
+                        <div class="kpi-icon bg-primary-soft">
+                            <i data-lucide="dollar-sign" class="text-primary"></i>
+                        </div>
+                        <div class="kpi-info">
+                            <p class="kpi-title">ยอดขายวันนี้</p>
+                            <h3 class="kpi-value" id="dashboard-sales-today">฿0.00</h3>
+                        </div>
+                    </div>
+                    
+                    <!-- KPI Card 2 -->
+                    <div class="kpi-card">
+                        <div class="kpi-icon bg-accent-soft">
+                            <i data-lucide="shopping-bag" class="text-accent"></i>
+                        </div>
+                        <div class="kpi-info">
+                            <p class="kpi-title">ออเดอร์ทั้งหมดวันนี้</p>
+                            <h3 class="kpi-value" id="dashboard-orders-today">0 รายการ</h3>
+                        </div>
+                    </div>
+                    
+                    <!-- KPI Card 3 -->
+                    <div class="kpi-card">
+                        <div class="kpi-icon bg-success-soft">
+                            <i data-lucide="award" class="text-success"></i>
+                        </div>
+                        <div class="kpi-info">
+                            <p class="kpi-title">คะแนนที่สะสมวันนี้</p>
+                            <h3 class="kpi-value" id="dashboard-points-earned">0 แต้ม</h3>
+                        </div>
+                    </div>
+                    
+                    <!-- KPI Card 4 -->
+                    <div class="kpi-card">
+                        <div class="kpi-icon bg-warning-soft">
+                            <i data-lucide="gift" class="text-warning"></i>
+                        </div>
+                        <div class="kpi-info">
+                            <p class="kpi-title">แต้มที่แลกไปวันนี้</p>
+                            <h3 class="kpi-value" id="dashboard-points-redeemed">0 แต้ม</h3>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="chart-section-layout">
+                    <!-- Chart 1: Sales trend -->
+                    <div class="panel-card">
+                        <div class="panel-header">
+                            <h3>แนวโน้มยอดขาย</h3>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="salesChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <!-- Chart 2: Product Breakdown -->
+                    <div class="panel-card">
+                        <div class="panel-header">
+                            <h3>สัดส่วนยอดขายตามหมวดหมู่</h3>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="categoryChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Recent Transactions -->
+                <div class="panel-card margin-top-lg">
+                    <div class="panel-header">
+                        <h3>ประวัติการทำรายการล่าสุด</h3>
+                    </div>
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>รหัสออเดอร์</th>
+                                    <th>วันที่/เวลา</th>
+                                    <th>สมาชิก</th>
+                                    <th>พนักงาน</th>
+                                    <th>ยอดรวมสุทธิ</th>
+                                    <th>รายละเอียด</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dashboard-orders-table-body">
+                                <!-- Order logs loaded dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- SETTINGS / SUPABASE VIEW -->
+            <section id="settings-view" class="view-section">
+                <div class="panel-card max-width-lg">
+                    <div class="panel-header border-bottom">
+                        <div>
+                            <h2>ตั้งค่าการเชื่อมต่อฐานข้อมูล (Supabase Configuration)</h2>
+                            <p>เชื่อมต่อแอปพลิเคชันกับ Supabase ของคุณเพื่อเก็บข้อมูลจริง หรือใช้โหมดออฟไลน์เพื่อจำลองระบบ</p>
+                        </div>
+                    </div>
+                    
+                    <div class="settings-form-layout">
+                        <div class="info-alert">
+                            <i data-lucide="info"></i>
+                            <div>
+                                <strong>คู่มือการใช้งาน GitHub Pages & Supabase:</strong>
+                                <p>หากนำโปรเจกต์นี้ไปอัปโหลดขึ้น GitHub Pages คุณสามารถเชื่อมต่อ Supabase ของตัวเองได้ทันทีโดยการนำ URL และ API Key มาใส่ในหน้านี้ ระบบจะจดจำค่านี้ไว้ในเครื่องของลูกค้าแต่ละเครื่องอย่างปลอดภัยโดยใช้ LocalStorage</p>
+                            </div>
+                        </div>
+                        
+                        <div class="input-group">
+                            <label for="db-mode-selector">โหมดฐานข้อมูล</label>
+                            <select id="db-mode-selector" class="form-select">
+                                <option value="offline">โหมดจำลอง (Offline Mock Mode / LocalStorage)</option>
+                                <option value="supabase">เชื่อมต่อ Supabase (Cloud Database)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="input-group">
+                            <label for="ga-measurement-id"><i data-lucide="bar-chart-3"></i> Google Analytics Measurement ID</label>
+                            <input type="text" id="ga-measurement-id" placeholder="G-XXXXXXXXXX">
+                        </div>
+                        
+                        <div id="supabase-config-fields" style="display: none;">
+                            <div class="input-group">
+                                <label for="supabase-url">Supabase URL</label>
+                                <input type="text" id="supabase-url" placeholder="https://xxxxxxxxx.supabase.co">
+                            </div>
+                            <div class="input-group">
+                                <label for="supabase-key">Supabase Anon Key</label>
+                                <input type="password" id="supabase-key" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
+                            </div>
+                        </div>
+                        
+                        <div class="form-actions">
+                            <button class="btn btn-outline" id="btn-test-db-connection" style="display: none;">
+                                <i data-lucide="refresh-cw"></i> ทดสอบการเชื่อมต่อ
+                            </button>
+                            <button class="btn btn-accent" id="btn-save-db-settings">
+                                <i data-lucide="save"></i> บันทึกการตั้งค่า
+                            </button>
+                        </div>
+                        
+                        <hr class="divider">
+                        
+                        <div class="sql-instructions">
+                            <h3>สคริปต์ SQL สำหรับการติดตั้ง</h3>
+                            <p>คัดลอกโค้ด SQL จากไฟล์ [schema.sql](file:///schema.sql) ในโฟลเดอร์โปรเจกต์นี้ ไปวางและกด Run ใน **Supabase SQL Editor** เพื่อสร้างตารางข้อมูลและเพิ่มสินค้าตัวอย่างในพริบตาเดียว!</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- ==================== DRINK OPTIONS MODAL ==================== -->
+    <div class="modal-backdrop" id="drink-options-modal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 id="option-drink-name">Latte</h3>
+                <button class="btn-close-modal" id="btn-close-drink-modal"><i data-lucide="x"></i></button>
+            </div>
+            
+            <div class="modal-body">
+                <!-- Drink Type (Hot/Ice/Frappe) -->
+                <div class="modal-section">
+                    <h4>ประเภทเครื่องดื่ม</h4>
+                    <div class="options-pill-group" id="drink-type-group">
+                        <button class="pill-btn active" data-value="ร้อน" data-price-add="0">ร้อน (+฿0)</button>
+                        <button class="pill-btn" data-value="เย็น" data-price-add="5">เย็น (+฿5)</button>
+                        <button class="pill-btn" data-value="ปั่น" data-price-add="10">ปั่น (+฿10)</button>
+                    </div>
+                </div>
+                
+                <!-- Drink Size (S/M/L) -->
+                <div class="modal-section">
+                    <h4>ขนาดแก้ว</h4>
+                    <div class="options-pill-group" id="drink-size-group">
+                        <button class="pill-btn" data-value="S" data-price-add="0">S (ปกติ)</button>
+                        <button class="pill-btn active" data-value="M" data-price-add="10">M (+฿10)</button>
+                        <button class="pill-btn" data-value="L" data-price-add="15">L (+฿15)</button>
+                    </div>
+                </div>
+                
+                <!-- Sweetness Level -->
+                <div class="modal-section">
+                    <h4>ระดับความหวาน</h4>
+                    <div class="options-pill-group" id="drink-sweet-group">
+                        <button class="pill-btn" data-value="0%">0% (ไม่หวาน)</button>
+                        <button class="pill-btn" data-value="25%">25% (หวานน้อย)</button>
+                        <button class="pill-btn active" data-value="50%">50% (ปานกลาง)</button>
+                        <button class="pill-btn" data-value="100%">100% (ปกติ)</button>
+                    </div>
+                </div>
+                
+                <div class="modal-price-summary">
+                    <span>ราคาต่อแก้ว:</span>
+                    <strong class="text-accent" id="modal-calculated-price">฿65.00</strong>
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <button class="btn btn-outline" id="btn-cancel-drink-modal">ยกเลิก</button>
+                <button class="btn btn-accent" id="btn-add-drink-cart">เพิ่มในตะกร้า</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== NEW CUSTOMER MODAL ==================== -->
+    <div class="modal-backdrop" id="customer-register-modal">
+        <div class="modal-card max-width-sm">
+            <div class="modal-header">
+                <h3>สมัครสมาชิกสะสมแต้ม</h3>
+                <button class="btn-close-modal" id="btn-close-customer-modal"><i data-lucide="x"></i></button>
+            </div>
+            
+            <form id="customer-register-form">
+                <div class="modal-body">
+                    <div class="input-group">
+                        <label for="reg-customer-name">ชื่อ-นามสกุล</label>
+                        <input type="text" id="reg-customer-name" placeholder="ชื่อเล่น หรือ ชื่อจริง" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="reg-customer-phone">เบอร์โทรศัพท์ (ใช้สะสมแต้ม)</label>
+                        <input type="tel" id="reg-customer-phone" placeholder="เช่น 0812345678" pattern="[0-9]{9,10}" required>
+                    </div>
+                </div>
+                
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" id="btn-cancel-customer-modal">ยกเลิก</button>
+                    <button type="submit" class="btn btn-primary">ลงทะเบียน</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ==================== PAYMENT MODAL ==================== -->
+    <div class="modal-backdrop" id="payment-modal">
+        <div class="modal-card max-width-lg">
+            <div class="modal-header">
+                <h3>ชำระเงิน</h3>
+                <button class="btn-close-modal" id="btn-close-payment-modal"><i data-lucide="x"></i></button>
+            </div>
+            
+            <div class="payment-modal-layout">
+                <!-- Left: Payment details -->
+                <div class="payment-details-section">
+                    <div class="payment-summary-box">
+                        <p>ยอดสุทธิที่ต้องชำระ:</p>
+                        <h2 class="text-accent" id="pay-modal-total">฿0.00</h2>
+                    </div>
+                    
+                    <div class="modal-section">
+                        <h4>เลือกวิธีการชำระเงิน</h4>
+                        <div class="payment-methods-grid">
+                            <button class="payment-method-btn active" data-method="cash">
+                                <i data-lucide="banknote"></i>
+                                <span>เงินสด</span>
+                            </button>
+                            <button class="payment-method-btn" data-method="promptpay">
+                                <i data-lucide="qr-code"></i>
+                                <span>PromptPay QR</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- CASH PANEL -->
+                    <div id="payment-cash-panel" class="payment-subpanel active">
+                        <div class="input-group">
+                            <label for="cash-received-input">เงินที่ได้รับมา (บาท)</label>
+                            <input type="number" id="cash-received-input" class="input-lg" placeholder="0.00" min="0" step="1">
+                        </div>
+                        
+                        <div class="cash-shortcuts">
+                            <button class="btn btn-sm btn-outline-primary cash-shortcut-btn" data-val="exact">พอดี</button>
+                            <button class="btn btn-sm btn-outline-primary cash-shortcut-btn" data-val="100">฿100</button>
+                            <button class="btn btn-sm btn-outline-primary cash-shortcut-btn" data-val="500">฿500</button>
+                            <button class="btn btn-sm btn-outline-primary cash-shortcut-btn" data-val="1000">฿1000</button>
+                        </div>
+                        
+                        <div class="change-display">
+                            <span>เงินทอน:</span>
+                            <strong id="cash-change-amount">฿0.00</strong>
+                        </div>
+                    </div>
+                    
+                    <!-- PROMPTPAY PANEL -->
+                    <div id="payment-promptpay-panel" class="payment-subpanel">
+                        <div class="promptpay-qr-wrapper">
+                            <div class="qr-header">
+                                <span class="pp-logo">Prompt Pay</span>
+                            </div>
+                            <div class="qr-image-placeholder">
+                                <!-- A mocked high fidelity QR Code generated via CSS & HTML -->
+                                <div class="qr-mock-code">
+                                    <div class="qr-corner top-left"></div>
+                                    <div class="qr-corner top-right"></div>
+                                    <div class="qr-corner bottom-left"></div>
+                                    <div class="qr-center-logo"><i data-lucide="coffee"></i></div>
+                                    <!-- Generates static pixels -->
+                                    <div class="qr-pixels"></div>
+                                </div>
+                            </div>
+                            <p class="qr-instruction">สแกนเพื่อชำระเงินผ่าน Mobile Banking</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <button class="btn btn-outline" id="btn-cancel-payment">ยกเลิก</button>
+                <button class="btn btn-accent btn-lg" id="btn-complete-payment">ยืนยันการชำระเงิน</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== ORDER DETAIL MODAL ==================== -->
+    <div class="modal-backdrop" id="order-detail-modal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>รายละเอียดใบเสร็จ</h3>
+                <button class="btn-close-modal" id="btn-close-order-detail-modal"><i data-lucide="x"></i></button>
+            </div>
+            
+            <div class="modal-body receipt-design" id="receipt-modal-body">
+                <!-- Receipt details loaded dynamically -->
+            </div>
+            
+            <div class="modal-footer">
+                <button class="btn btn-primary btn-block" id="btn-close-receipt-done">เสร็จสิ้น</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main JavaScript Logic -->
+    <script src="app.js"></script>
+</body>
+</html>
